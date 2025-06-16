@@ -21,11 +21,11 @@ COPY . .
 # Use the pre-cleaned rush.json (without comments and without communication packages)
 COPY railway/rush-clean.json ./rush.json
 
-# Remove the lock file since it references packages we've removed
-RUN rm -f common/config/rush/pnpm-lock.yaml
+# Remove all lock files since they reference packages we've removed
+RUN find . -name "pnpm-lock.yaml" -type f -delete
 
-# Install dependencies (this will generate a new lock file)
-RUN rush install
+# Run rush update to generate new lock file and install dependencies
+RUN rush update
 
 # Build core services only
 RUN rush build --to @hcengineering/pod-server --to @hcengineering/pod-front --to @hcengineering/pod-account --to @hcengineering/pod-workspace --to @hcengineering/pod-collaborator

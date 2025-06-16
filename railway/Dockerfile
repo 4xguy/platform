@@ -23,11 +23,15 @@ RUN if [ ! -f "communication/packages/client-query/package.json" ]; then \
     echo "Communication submodule not found, using cleaned rush.json" && \
     cp railway/rush-clean.json rush.json && \
     rm -rf communication || true && \
-    rm -f common/config/rush/pnpm-lock.yaml; \
+    find . -name "pnpm-lock.yaml" -type f -delete; \
     fi
 
 # Install dependencies
-RUN rush install
+RUN if [ -f "railway/rush-clean.json" ]; then \
+    rush update; \
+    else \
+    rush install; \
+    fi
 
 # Build all packages
 RUN rush build && rush bundle && rush package

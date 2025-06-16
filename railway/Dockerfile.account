@@ -19,12 +19,12 @@ COPY . .
 # Use the pre-cleaned rush.json (without comments and without communication packages)
 COPY railway/rush-clean.json ./rush.json
 
-# Clean up communication directory and lock file
+# Clean up communication directory and lock files
 RUN rm -rf communication || true
-RUN rm -f common/config/rush/pnpm-lock.yaml
+RUN find . -name "pnpm-lock.yaml" -type f -delete
 
-# Install dependencies (this will generate a new lock file)
-RUN rush install
+# Run rush update to generate new lock file and install dependencies
+RUN rush update
 
 # Build account service and its dependencies
 RUN rush build --to @hcengineering/pod-account
