@@ -69,12 +69,11 @@ for (let block of projectBlocks) {
   try {
     const project = JSON.parse(block);
     
-    // Only include non-communication packages that are in main directories
-    if (!project.packageName.includes('communication') && 
-        !project.projectFolder.startsWith('communication/')) {
+    // Only exclude packages that are in the communication submodule directory
+    if (!project.projectFolder.startsWith('communication/')) {
       projects.push(project);
     } else {
-      console.log(`Excluding: ${project.packageName}`);
+      console.log(`Excluding from submodule: ${project.packageName}`);
     }
   } catch (e) {
     // Skip malformed entries
