@@ -21,6 +21,10 @@ COPY . .
 # Use the pre-cleaned rush.json (without comments and without communication packages)
 COPY railway/rush-clean.json ./rush.json
 
+# Copy and run the patch script to remove communication submodule dependencies
+COPY railway/patch-dependencies.js ./railway/
+RUN node ./railway/patch-dependencies.js
+
 # Remove all lock files since they reference packages we've removed
 RUN find . -name "pnpm-lock.yaml" -type f -delete
 
