@@ -19,10 +19,11 @@ COPY . .
 # Use the pre-cleaned rush.json (without comments and without communication packages)
 COPY railway/rush-clean.json ./rush.json
 
-# Clean up communication directory
+# Clean up communication directory and lock file
 RUN rm -rf communication || true
+RUN rm -f common/config/rush/pnpm-lock.yaml
 
-# Install dependencies
+# Install dependencies (this will generate a new lock file)
 RUN rush install
 
 # Build server and its dependencies

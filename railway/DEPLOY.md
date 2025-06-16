@@ -185,6 +185,7 @@ To scale services:
    - Railway's build process doesn't automatically fetch submodules
    - The provided Dockerfiles automatically exclude communication packages if the submodule is not available
    - This doesn't affect core functionality
+   - The lock file (pnpm-lock.yaml) is removed and regenerated to match the cleaned rush.json
 
 3. **Services can't communicate**
    - Verify internal URLs use `.railway.internal` domain

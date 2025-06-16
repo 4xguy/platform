@@ -21,7 +21,10 @@ COPY . .
 # Use the pre-cleaned rush.json (without comments and without communication packages)
 COPY railway/rush-clean.json ./rush.json
 
-# Install dependencies
+# Remove the lock file since it references packages we've removed
+RUN rm -f common/config/rush/pnpm-lock.yaml
+
+# Install dependencies (this will generate a new lock file)
 RUN rush install
 
 # Build core services only
