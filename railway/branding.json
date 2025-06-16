@@ -1,0 +1,25 @@
+{
+  "title": "Huly Platform",
+  "caption": "All-in-One Business Platform",
+  "description": "CRM, HRM, ATS, and Project Management",
+  "image": "/img/logo.svg",
+  "favicon": "/img/favicon.ico",
+  "colors": {
+    "primary": "#2563eb",
+    "secondary": "#7c3aed",
+    "success": "#10b981",
+    "warning": "#f59e0b",
+    "error": "#ef4444"
+  },
+  "links": {
+    "homepage": "https://huly.io",
+    "documentation": "https://docs.huly.io",
+    "support": "https://support.huly.io"
+  },
+  "features": {
+    "signup": true,
+    "googleAuth": false,
+    "githubAuth": false,
+    "passwordReset": true
+  }
+}

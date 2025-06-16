@@ -1,0 +1,38 @@
+# Railway deployment Dockerfile for Frontend Service
+FROM node:20.11.0-alpine as builder
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++ git
+
+# Install Rush globally
+RUN npm install -g @microsoft/rush pnpm@9.15.3
+
+WORKDIR /app
+
+# Copy rush configuration files
+COPY rush.json .
+COPY common/config/rush common/config/rush
+
+# Copy all source files
+COPY . .
+
+# Install dependencies
+RUN rush install
+
+# Build only frontend and its dependencies
+RUN rush build --to @hcengineering/prod
+RUN rush bundle --to @hcengineering/prod
+RUN rush package --to @hcengineering/prod
+
+# Production stage
+FROM nginx:alpine
+
+# Copy built frontend
+COPY --from=builder /app/dev/prod/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY railway/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

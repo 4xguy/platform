@@ -1,0 +1,144 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+
+env:
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+jobs:
+  deploy:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.11.0'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@hcengineering'
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Set deployment environment
+        id: set-env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "DEPLOY_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "DEPLOY_ENV=production" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "DEPLOY_ENV=development" >> $GITHUB_OUTPUT
+          else
+            echo "DEPLOY_ENV=staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy to Railway
+        run: |
+          railway up --service huly-platform \
+            --environment ${{ steps.set-env.outputs.DEPLOY_ENV }} \
+            --detach
+
+      - name: Get deployment URL
+        id: get-url
+        run: |
+          DEPLOYMENT_URL=$(railway status --json | jq -r '.url')
+          echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+
+      - name: Health check
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 30
+          
+          MAX_ATTEMPTS=30
+          ATTEMPT=0
+          
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            if curl -f "${{ steps.get-url.outputs.url }}/api/_health" > /dev/null 2>&1; then
+              echo "Deployment is healthy!"
+              exit 0
+            fi
+            
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS failed, retrying in 10s..."
+            sleep 10
+          done
+          
+          echo "Deployment health check failed after $MAX_ATTEMPTS attempts"
+          exit 1
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 Deployed to Railway!\n\nEnvironment: ${{ steps.set-env.outputs.DEPLOY_ENV }}\nURL: ${{ steps.get-url.outputs.url }}`
+            })
+
+  deploy-services:
+    name: Deploy Microservices
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    
+    strategy:
+      matrix:
+        service:
+          - name: frontend
+            dockerfile: railway/Dockerfile.front
+          - name: account
+            dockerfile: railway/Dockerfile.account
+          - name: server
+            dockerfile: railway/Dockerfile.server
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.11.0'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@hcengineering'
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy ${{ matrix.service.name }}
+        run: |
+          railway up \
+            --service huly-${{ matrix.service.name }} \
+            --environment production \
+            --dockerfile ${{ matrix.service.dockerfile }} \
+            --detach
+
+      - name: Health check ${{ matrix.service.name }}
+        run: |
+          echo "Service ${{ matrix.service.name }} deployed successfully"

@@ -1,0 +1,42 @@
+# Railway deployment Dockerfile for Transactor/Server Service
+FROM node:20.11.0-alpine as builder
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++ git
+
+# Install Rush globally
+RUN npm install -g @microsoft/rush pnpm@9.15.3
+
+WORKDIR /app
+
+# Copy rush configuration files
+COPY rush.json .
+COPY common/config/rush common/config/rush
+
+# Copy all source files
+COPY . .
+
+# Install dependencies
+RUN rush install
+
+# Build server and its dependencies
+RUN rush build --to @hcengineering/pod-server
+RUN rush bundle --to @hcengineering/pod-server
+
+# Production stage
+FROM node:20.11.0-alpine
+
+RUN apk add --no-cache ca-certificates
+
+WORKDIR /app
+
+# Copy built bundles
+COPY --from=builder /app/pods/server/bundle ./
+COPY --from=builder /app/models/all/bundle/model.json ./model.json
+
+# Install production dependencies
+RUN npm install ws@^8.18.2 msgpackr@^1.11.2
+
+EXPOSE 3333
+
+CMD ["node", "./bundle.js"]
