@@ -26,13 +26,13 @@ RUN git init && \
         git submodule update --init --recursive || true; \
     fi
 
+# Copy the script to remove communication packages
+COPY railway/remove-communication.js ./railway/
+
 # Remove packages that depend on the communication submodule if it's not available
-RUN if [ ! -d "communication" ]; then \
-        echo "Communication submodule not found, removing from rush.json" && \
-        node -e "const fs = require('fs'); \
-                 const rush = JSON.parse(fs.readFileSync('rush.json')); \
-                 rush.projects = rush.projects.filter(p => !p.packageName.includes('communication')); \
-                 fs.writeFileSync('rush.json', JSON.stringify(rush, null, 2));" \
+RUN if [ ! -d "communication" ] || [ -z "$(ls -A communication 2>/dev/null)" ]; then \
+        echo "Communication submodule not found or empty, removing from rush.json" && \
+        node ./railway/remove-communication.js \
     ; fi
 
 # Install dependencies

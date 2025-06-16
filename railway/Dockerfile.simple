@@ -18,13 +18,11 @@ COPY common/config/rush common/config/rush
 # Copy all package files
 COPY . .
 
+# Copy the script to remove communication packages
+COPY railway/remove-communication.js ./railway/
+
 # Remove communication-related projects from rush.json
-RUN node -e " \
-    const fs = require('fs'); \
-    const rush = JSON.parse(fs.readFileSync('rush.json')); \
-    rush.projects = rush.projects.filter(p => !p.packageName.includes('communication')); \
-    fs.writeFileSync('rush.json', JSON.stringify(rush, null, 2)); \
-    "
+RUN node ./railway/remove-communication.js
 
 # Clean up communication directory if it exists but is empty
 RUN rm -rf communication || true
