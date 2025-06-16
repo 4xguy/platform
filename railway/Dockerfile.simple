@@ -18,14 +18,8 @@ COPY common/config/rush common/config/rush
 # Copy all package files
 COPY . .
 
-# Copy the script to remove communication packages
-COPY railway/remove-communication.js ./railway/
-
-# Remove communication-related projects from rush.json
-RUN node ./railway/remove-communication.js
-
-# Clean up communication directory if it exists but is empty
-RUN rm -rf communication || true
+# Use the pre-cleaned rush.json (without comments and without communication packages)
+COPY railway/rush-clean.json ./rush.json
 
 # Install dependencies
 RUN rush install

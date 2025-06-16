@@ -15,25 +15,15 @@ WORKDIR /app
 COPY rush.json .
 COPY common/config/rush common/config/rush
 
-# Copy all files including .gitmodules
+# Copy all files
 COPY . .
 
-# Initialize and update git submodules
-RUN git init && \
-    git config --global --add safe.directory /app && \
-    if [ -f .gitmodules ]; then \
-        git submodule init && \
-        git submodule update --init --recursive || true; \
+# Use the pre-cleaned rush.json if communication submodule is missing
+RUN if [ ! -f "communication/packages/client-query/package.json" ]; then \
+    echo "Communication submodule not found, using cleaned rush.json" && \
+    cp railway/rush-clean.json rush.json && \
+    rm -rf communication || true; \
     fi
-
-# Copy the script to remove communication packages
-COPY railway/remove-communication.js ./railway/
-
-# Remove packages that depend on the communication submodule if it's not available
-RUN if [ ! -d "communication" ] || [ -z "$(ls -A communication 2>/dev/null)" ]; then \
-        echo "Communication submodule not found or empty, removing from rush.json" && \
-        node ./railway/remove-communication.js \
-    ; fi
 
 # Install dependencies
 RUN rush install

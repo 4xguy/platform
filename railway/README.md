@@ -18,9 +18,11 @@ This directory contains all the necessary files to deploy the Huly Platform to R
 
 - `railway.json` - Main Railway configuration
 - `Dockerfile` - Monolithic deployment (all services in one container)
+- `Dockerfile.simple` - Simplified deployment without communication submodule
 - `Dockerfile.front` - Frontend service only
 - `Dockerfile.server` - Backend/API service only
 - `Dockerfile.account` - Account service only
+- `rush-clean.json` - Pre-cleaned rush.json without comments and communication packages
 - `.env.template` - Environment variables template
 - `deploy.sh` - Local deployment script
 - `DEPLOY.md` - Detailed deployment guide

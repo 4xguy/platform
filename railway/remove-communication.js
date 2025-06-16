@@ -6,10 +6,18 @@ const fs = require('fs');
 const path = require('path');
 
 function removeComments(content) {
-  // Remove /* */ comments
-  content = content.replace(/\/\*[\s\S]*?\*\//g, '');
-  // Remove // comments
+  // Remove single-line comments
   content = content.replace(/\/\/.*$/gm, '');
+  
+  // Remove multi-line comments
+  content = content.replace(/\/\*[\s\S]*?\*\//g, '');
+  
+  // Remove trailing commas before } or ]
+  content = content.replace(/,\s*([}\]])/g, '$1');
+  
+  // Ensure the result is valid JSON by replacing multiple newlines with single ones
+  content = content.replace(/\n\s*\n/g, '\n');
+  
   return content;
 }
 
