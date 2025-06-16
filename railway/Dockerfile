@@ -4,7 +4,7 @@
 FROM node:20.11.0-alpine as builder
 
 # Install build dependencies
-RUN apk add --no-cache python3 make g++ git
+RUN apk add --no-cache python3 make g++ git openssh-client
 
 # Install Rush globally
 RUN npm install -g @microsoft/rush pnpm@9.15.3
@@ -15,8 +15,25 @@ WORKDIR /app
 COPY rush.json .
 COPY common/config/rush common/config/rush
 
-# Copy all package.json files for dependency installation
+# Copy all files including .gitmodules
 COPY . .
+
+# Initialize and update git submodules
+RUN git init && \
+    git config --global --add safe.directory /app && \
+    if [ -f .gitmodules ]; then \
+        git submodule init && \
+        git submodule update --init --recursive || true; \
+    fi
+
+# Remove packages that depend on the communication submodule if it's not available
+RUN if [ ! -d "communication" ]; then \
+        echo "Communication submodule not found, removing from rush.json" && \
+        node -e "const fs = require('fs'); \
+                 const rush = JSON.parse(fs.readFileSync('rush.json')); \
+                 rush.projects = rush.projects.filter(p => !p.packageName.includes('communication')); \
+                 fs.writeFileSync('rush.json', JSON.stringify(rush, null, 2));" \
+    ; fi
 
 # Install dependencies
 RUN rush install

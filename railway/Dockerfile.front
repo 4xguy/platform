@@ -16,6 +16,17 @@ COPY common/config/rush common/config/rush
 # Copy all source files
 COPY . .
 
+# Remove communication-related projects from rush.json
+RUN node -e " \
+    const fs = require('fs'); \
+    const rush = JSON.parse(fs.readFileSync('rush.json')); \
+    rush.projects = rush.projects.filter(p => !p.packageName.includes('communication')); \
+    fs.writeFileSync('rush.json', JSON.stringify(rush, null, 2)); \
+    "
+
+# Clean up communication directory
+RUN rm -rf communication || true
+
 # Install dependencies
 RUN rush install
 

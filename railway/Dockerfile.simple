@@ -1,0 +1,62 @@
+# Railway deployment Dockerfile for Huly Platform (Simplified)
+# This version excludes the communication submodule for easier deployment
+
+FROM node:20.11.0-alpine as builder
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++ git
+
+# Install Rush globally
+RUN npm install -g @microsoft/rush pnpm@9.15.3
+
+WORKDIR /app
+
+# Copy rush configuration files first
+COPY rush.json .
+COPY common/config/rush common/config/rush
+
+# Copy all package files
+COPY . .
+
+# Remove communication-related projects from rush.json
+RUN node -e " \
+    const fs = require('fs'); \
+    const rush = JSON.parse(fs.readFileSync('rush.json')); \
+    rush.projects = rush.projects.filter(p => !p.packageName.includes('communication')); \
+    fs.writeFileSync('rush.json', JSON.stringify(rush, null, 2)); \
+    "
+
+# Clean up communication directory if it exists but is empty
+RUN rm -rf communication || true
+
+# Install dependencies
+RUN rush install
+
+# Build core services only
+RUN rush build --to @hcengineering/pod-server --to @hcengineering/pod-front --to @hcengineering/pod-account --to @hcengineering/pod-workspace --to @hcengineering/pod-collaborator
+RUN rush bundle --to @hcengineering/pod-server --to @hcengineering/pod-front --to @hcengineering/pod-account --to @hcengineering/pod-workspace --to @hcengineering/pod-collaborator
+
+# Production stage
+FROM node:20.11.0-alpine
+
+RUN apk add --no-cache ca-certificates
+
+WORKDIR /app
+
+# Copy built bundles from builder
+COPY --from=builder /app/pods/server/bundle ./server/
+COPY --from=builder /app/dev/prod/dist ./front/
+COPY --from=builder /app/pods/account/bundle ./account/
+COPY --from=builder /app/pods/workspace/bundle ./workspace/
+COPY --from=builder /app/pods/collaborator/bundle ./collaborator/
+COPY --from=builder /app/models/all/bundle/model.json ./model.json
+
+# Copy startup script
+COPY railway/start.sh ./start.sh
+RUN chmod +x ./start.sh
+
+# Expose ports
+EXPOSE 8080 3000 3333 3078
+
+# Start services
+CMD ["./start.sh"]

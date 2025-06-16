@@ -178,12 +178,19 @@ To scale services:
 1. **Build fails with Rush errors**
    - Ensure Node.js version 20.11.0 is used
    - Check GitHub token for package access
+   - If you see errors about `@hcengineering/communication-*` packages, the simplified Dockerfile (Dockerfile.simple) is already configured to handle this
 
-2. **Services can't communicate**
+2. **Communication submodule issues**
+   - The repository uses a git submodule for communication features
+   - Railway's build process doesn't automatically fetch submodules
+   - The provided Dockerfiles automatically exclude communication packages if the submodule is not available
+   - This doesn't affect core functionality
+
+3. **Services can't communicate**
    - Verify internal URLs use `.railway.internal` domain
    - Check environment variables are properly set
 
-3. **File uploads fail**
+4. **File uploads fail**
    - Verify MinIO configuration
    - Check storage permissions
 
