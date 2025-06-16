@@ -21,6 +21,9 @@ COPY . .
 # Use the pre-cleaned rush.json (without comments and without communication packages)
 COPY railway/rush-clean.json ./rush.json
 
+# Remove .npmrc files that require GitHub authentication
+RUN find . -name ".npmrc" -type f -delete
+
 # Copy and run the patch script to remove communication submodule dependencies
 COPY railway/patch-dependencies.js ./railway/
 RUN node ./railway/patch-dependencies.js

@@ -2,6 +2,10 @@
 
 This directory contains all the necessary files to deploy the Huly Platform to Railway.com.
 
+⚠️ **Important Note**: The Huly Platform uses private packages hosted on GitHub's npm registry. 
+Railway deployments require authentication to access these packages. See [DEPLOY-SIMPLE.md](./DEPLOY-SIMPLE.md) 
+for alternative approaches if you don't have access to these private packages.
+
 ## Quick Start
 
 1. **Fork this repository** to your GitHub account
